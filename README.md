@@ -3,7 +3,7 @@ HaxeBridges
 
 An experimental library for discrete communication between haxe targets.
 
-Haxe's incredibly powerful compiler allows it to target many platforms, although targeting multiple platforms from one project is still a matter of setting up multiple projects and build processes.
+Haxe's incredibly powerful compiler allows it to target many platforms, although building different, platform-specific parts of a solution still requires setting up multiple builds (and potentially projects).
 
 Most modern projects require multiple targets to be used (e.g. client/server) or at least multiple executables to be built (e.g. worker threads). Building the interaction code between these multiple processes can be very costly despite it's formulaic nature.
 
