@@ -18,7 +18,16 @@ class WorkerMacros implements IBridgeType{
     }
 
     public function getInstExpr(bridgeId:Int):Expr{
-	   	return macro {new bridge.worker.WorkerBridge(haxe.Resource.getBytes("worker_"+$v{bridgeId}).getData());};
+
+		var args = Sys.args();
+		if(args.indexOf("-swf")!=-1){
+			return macro {new bridge.worker.WorkerBridge(haxe.Resource.getBytes("worker_"+$v{bridgeId}).getData());};
+		}else if(args.indexOf("-js")!=-1){
+			return macro {new bridge.worker.WorkerBridge("worker_"+$v{bridgeId}+".js");};
+		}else{
+			throw "Unsupported target";
+		}
+	   	
     }
 	
 
@@ -94,9 +103,6 @@ class WorkerMacros implements IBridgeType{
 
     	++ buildCount;
     	if(buildCount==totalClasses){
-    		/*
-			-swf-version 11.4
-			*/
 
 			var outputDir:String = haxe.macro.Compiler.getOutput();
 			var slashIndex:Int = outputDir.lastIndexOf("/");
@@ -104,7 +110,15 @@ class WorkerMacros implements IBridgeType{
 				var slashIndex2:Int = outputDir.lastIndexOf("\\");
 				if(slashIndex2>slashIndex)slashIndex = slashIndex2;
 			}
-			var bridgeOutput:String = outputDir.substring(0, slashIndex) + "/worker_"+bridgeId+".swf";
+			var target:String;
+			var args = Sys.args();
+			if(args.indexOf("-swf")!=-1){
+				target = "swf";
+			}else if(args.indexOf("-js")!=-1){
+				target = "js";
+			}
+
+			var bridgeOutput:String = outputDir.substring(0, slashIndex) + "/worker_"+bridgeId+"."+target;
 
 			var classPaths:Array<String> = haxe.macro.Context.getClassPath();
 			var cp:String = "";
@@ -112,21 +126,32 @@ class WorkerMacros implements IBridgeType{
 				cp += " -cp '"+classPaths[i]+"'";
 			}
 
-			var args = Sys.args();
-			var swfVersIndex = args.indexOf("-swf-version");
-			var swfVers:String;
-			if(swfVersIndex!=-1){
-				swfVers = args[swfVersIndex+1];
-			}else{
-				swfVers = "11.4"; // earliest FP with workers
+			var cmd = "haxe -"+target+" '"+bridgeOutput+"'"+cp+" -main bridge.worker.WorkerRoot --macro bridge.worker.WorkerMacros.complete\\(\\'"+entryPaths.join(",")+"\\'\\)";
+			if(args.indexOf("-debug")!=-1){
+				cmd += " -debug";
 			}
-			var cmd = "haxe -swf '"+bridgeOutput+"'"+cp+" -main bridge.worker.WorkerRoot -swf-version "+swfVers+" --macro bridge.worker.WorkerMacros.complete\\(\\'"+entryPaths.join(",")+"\\'\\)";
-			trace("\n\nBEGINNING COMPILE WORKER #"+bridgeId+": \n"+cmd);
-      		Sys.command(cmd);
-			trace("\nFINISHED WORKER COMPILE #"+bridgeId+"\n");
+			if(target=="swf"){
+				var swfVersIndex = args.indexOf("-swf-version");
+				var swfVers:String;
+				if(swfVersIndex!=-1){
+					swfVers = args[swfVersIndex+1];
+				}else{
+					swfVers = "11.4"; // earliest FP with workers
+				}
+				cmd += " -swf-version "+swfVers;
+			}
 
-			haxe.macro.Context.addResource("worker_"+bridgeId, sys.io.File.getBytes(bridgeOutput));
-			sys.FileSystem.deleteFile(bridgeOutput);
+			trace("\n\nBEGINNING WORKER COMPILE #"+bridgeId+": \n"+cmd);
+      		var ret = Sys.command(cmd);
+      		if(ret==0)
+				trace("\nWORKER COMPILE #"+bridgeId+" FINISHED\n");
+			else
+				throw("\nWORKER COMPILE #"+bridgeId+" FAILED\n");
+
+			if(target=="swf"){
+				haxe.macro.Context.addResource("worker_"+bridgeId, sys.io.File.getBytes(bridgeOutput));
+				sys.FileSystem.deleteFile(bridgeOutput);
+			}
     	}
 
         return bridgeFields;

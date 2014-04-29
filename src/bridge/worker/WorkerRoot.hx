@@ -1,6 +1,6 @@
 package bridge.worker;
 
-#if !macro
+#if (!macro && flash)
 import flash.events.Event;
 import flash.system.MessageChannel;
 import flash.system.Worker;
@@ -15,7 +15,7 @@ class WorkerRoot
 	   return macro $v{haxe.macro.Context.definedValue(key)}; 
 	} 
 
-#if !macro
+#if (!macro && flash)
 	private static var mainToWorker:MessageChannel;
 	private static var workerToMain:MessageChannel;
 	
@@ -28,6 +28,14 @@ class WorkerRoot
 		workerToMain = Worker.current.getSharedProperty("workerToMain");
 		//Listen for messages from the mian thread
 		mainToWorker.addEventListener(Event.CHANNEL_MESSAGE, onMainToWorker);
+
+
+					       	
+		haxe.Log.trace = function(v : Dynamic, ?inf : haxe.PosInfos){
+			workerToMain.send("trace");
+			workerToMain.send(v);
+			workerToMain.send(inf);
+		};
 	}
 			
 	//Main >> Worker
@@ -49,26 +57,39 @@ class WorkerRoot
 			}
 		}
 	}
-	/*private static function getResult(instId:Int, field:Int, params:Array<Dynamic>):Dynamic{
-		if(field==0){
-			// constructor
-			var type = classes[typeId];
-			instances.set(typeId+"_"+instId) = ;
-		}else if(field<0){
-			var type = classes[typeId];
-			// static function, not done yet
-			switch(typeId){
-				default: throw "Unknown field index: "+field;
-			}
-		}else{
-			// non-static function
-			var inst = instances.get(typeId+"_"+instId);
-			switch(typeId){
-				case 0: return obj.nonStaticMethod();
-				default: throw "Unknown field index: "+field;
-			}
+#end
+
+
+#if (!macro && js)
+	
+	public static function main()
+	{
+km.
+		untyped __js__("self.onmessage = this.onMainToWorker");
+
+		haxe.Log.trace = function(v : Dynamic, ?inf : haxe.PosInfos){
+			untyped __js__("self.postMessage( ['trace', v, inf] )");
+		};
+	}
+			
+	//Main >> Worker
+	private static function onMainToWorker(event:js.html.MessageEvent):Void {
+
+		var message:Array<Dynamic> = event.data;
+
+		var id : Int = message[0];
+		var typeId = message[1];
+		var instId = message[2];
+		var field : Int = message[3];
+		var params = message[4];
+
+		var type:Dynamic = classes[typeId];
+		var result:Dynamic = type._getResult(instId, field, params);
+
+		if(id!=-1){
+			untyped __js__("self.postMessage( [id, result] )");
 		}
-		return null;
-	}*/
+	}
+
 #end
 }

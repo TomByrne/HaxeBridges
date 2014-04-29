@@ -61,8 +61,72 @@ class WorkerBridge implements IBridgeType{
 		//Trace out whatever message the worker has sent us.
 		//trace("[Worker] " + workerToMain.receive());
 		while(workerToMain.messageAvailable){
-			var id = workerToMain.receive();
-			var result = workerToMain.receive();
+			var id:Dynamic = workerToMain.receive();
+			if(id=="trace"){
+				haxe.Log.trace(workerToMain.receive(), workerToMain.receive());
+			}else{
+				var result = workerToMain.receive();
+				var index = handlerIds.indexOf(id);
+				handlerIds.splice(index, 1);
+				trace("<< "+result+" "+index+" "+id);
+
+				var handler = handlers[index];
+				handlers.splice(index, 1);
+				handler(result);
+			}	
+		}
+	}
+}
+#end
+
+
+#if js
+import js.html.Worker;
+import haxe.Timer;
+
+
+class WorkerBridge implements IBridgeType{
+
+ 
+	private var worker:Worker;
+
+	private var lastId:Int = 0;
+	private var handlerIds:Array<Int> = [];
+	private var handlers:Array<Dynamic->Void> = [];
+	
+
+	public function new(workerUrl:String){
+		//Create worker from our own loaderInfo.bytes
+		worker = new Worker(workerUrl);
+		worker.onmessage = onWorkerToMain;
+	}
+
+	public function call(type:Int, inst:Int, field:Int, ?params:Array<Dynamic>, ?handler:Null<Dynamic>->Void):Void{
+		var id;
+		if(handler!=null){
+			id = lastId++;
+			handlerIds.push(id);
+			handlers.push( handler );
+		}else{
+			id = -1;
+		}
+		worker.postMessage([id, type, inst, field, params]);
+	}
+	
+	private function onWorkerToMain(event:js.html.MessageEvent):Void {
+
+		var response:Array<Dynamic> = event.data;
+
+		//if(!Std.is(response, Array<Dynamic>))return;
+
+		var respArr:Array<Dynamic> = cast response;
+		var id:Dynamic = respArr[0];
+
+		if(id=="trace"){
+			haxe.Log.trace(respArr[1], respArr[2]);
+		}else{
+
+			var result = respArr[1];
 			var index = handlerIds.indexOf(id);
 			handlerIds.splice(index, 1);
 

@@ -4,6 +4,7 @@ import flash.display.*;
 import flash.text.*;
 import flash.Lib;
 
+//@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
 class SimpleWorkerExample extends Sprite{
 	
 	public static function main(){
@@ -27,6 +28,9 @@ class SimpleWorkerExample extends Sprite{
 		obj.nonStaticMethod(function(result){
 			trace("Worker result: "+result);
 		});
+
+		// var result = obj.nonStaticMethod().async();
+		// trace("Worker result: "+result);		
 
 	}
 }

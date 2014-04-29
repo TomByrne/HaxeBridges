@@ -1,7 +1,7 @@
--swf bin/SimpleWorkerExample.swf
--swf-version 11.4
--main SimpleWorkerExample
+-js bin/SimpleWorkerExample.js
+-main SimpleWorkerExample_js
 -debug
 -cp src
 -cp ../../src
+-lib continuation
 --macro Bridge.add('ObjectInsideWorker', 'Worker')
