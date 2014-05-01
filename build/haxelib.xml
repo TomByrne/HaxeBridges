@@ -1,0 +1,6 @@
+<project name="bridges" url="http://github.com/TomByrne/HaxeBridges" license="GPL">
+	<user name="tbyrne"/>
+	<tag v="cross" />
+	<description>A library which spawns additional compilers and adds a communication between the resulting output. For use with client/server and worker thread type setups.</description>
+	<version name="0.0.1.0"></version>
+</project>

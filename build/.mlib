@@ -1,0 +1,6 @@
+<mlib bin="bin">
+	<resources>
+		<resource type="src" path="../src" dest="src" />
+		<resource type="license" path="license.mtt" />
+	</resources>
+</mlib>
